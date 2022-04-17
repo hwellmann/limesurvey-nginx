@@ -1,0 +1,58 @@
+# Limesurvey with PostgreSQL database and nginx reverse proxy
+# nginx handles SSL, using a certificate created by certbot
+#
+# The following environment variables must be defined in an .env file
+# which is not committed to the repository:
+#
+# ADMIN_EMAIL: email address for certbot
+# ADMIN_PASSWORD: application password for Limesurvey admin
+# DB_PASSWORD: PostgreSQL user and admin password
+# HOSTNAME: DNS name for limesurvey host and SSL certificate
+
+version: "3.0"
+services:
+
+  nginx:
+    image: jonasal/nginx-certbot:latest
+    restart: unless-stopped
+    environment:
+      CERTBOT_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      STAGING: 0
+      DEBUG: 0
+      HOSTNAME: ${HOSTNAME:-example.com}
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - secrets:/etc/letsencrypt
+      - ./nginx/templates:/etc/nginx/templates
+
+  limesurvey:
+    image: martialblog/limesurvey:5-apache
+    volumes:
+      - surveys:/var/www/html/upload/surveys
+      - lime:/var/www/html
+      - ./php/timezone.ini:/usr/local/etc/php/conf.d/timezone.ini
+    depends_on:
+      - lime-db
+    environment:
+      DB_TYPE: pgsql
+      DB_PORT: 5432
+      DB_HOST: lime-db
+      DB_PASSWORD: ${DB_PASSWORD:-secret}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-secret}
+      PUBLIC_URL: https://${HOSTNAME}
+  lime-db:
+    image: postgres:13
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: limesurvey
+      POSTGRES_DB: limesurvey
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      TZ: Europe/Berlin
+volumes:
+  db-data:
+  lime:
+  secrets:
+  surveys:
