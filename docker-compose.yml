@@ -36,20 +36,21 @@ services:
     depends_on:
       - lime-db
     environment:
-      DB_TYPE: pgsql
-      DB_PORT: 5432
+      DB_TYPE: mysql
+      DB_PORT: 3306
       DB_HOST: lime-db
       DB_PASSWORD: ${DB_PASSWORD:-secret}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-secret}
       PUBLIC_URL: https://${HOSTNAME}
   lime-db:
-    image: postgres:13
+    image: mariadb:10
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/mysql
     environment:
-      POSTGRES_USER: limesurvey
-      POSTGRES_DB: limesurvey
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_USER: limesurvey
+      MYSQL_DATABASE: limesurvey
+      MYSQL_PASSWORD: ${DB_PASSWORD:-secret}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-secret}
       TZ: Europe/Berlin
 volumes:
   db-data:
